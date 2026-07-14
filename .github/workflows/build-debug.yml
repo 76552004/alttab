@@ -23,7 +23,6 @@ jobs:
             -derivedDataPath DerivedData \
             ONLY_ACTIVE_ARCH=NO \
             ARCHS="arm64 x86_64" \
-            MACOSX_DEPLOYMENT_TARGET=12.0 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
