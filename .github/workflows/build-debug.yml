@@ -1,4 +1,4 @@
-name: Build Debug App
+name: Build Universal Debug App
 
 on:
   workflow_dispatch:
@@ -13,26 +13,52 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Build Debug app
+      - name: Build Universal Debug app
         run: |
+          set -euo pipefail
           xcodebuild \
             -project alt-tab-macos.xcodeproj \
             -scheme Debug \
             -configuration Debug \
             -derivedDataPath DerivedData \
+            ONLY_ACTIVE_ARCH=NO \
+            ARCHS="arm64 x86_64" \
+            MACOSX_DEPLOYMENT_TARGET=12.0 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
-      - name: Package app
+      - name: Verify compatibility and package app
         run: |
+          set -euo pipefail
           APP_PATH=$(find DerivedData/Build/Products/Debug -maxdepth 1 -name '*.app' -print -quit)
           test -n "$APP_PATH"
+
+          EXECUTABLE="$APP_PATH/Contents/MacOS/AltTab"
+          test -f "$EXECUTABLE"
+
+          ARCH_LIST=$(lipo -archs "$EXECUTABLE")
+          echo "Executable architectures: $ARCH_LIST"
+          [[ " $ARCH_LIST " == *" arm64 "* ]]
+          [[ " $ARCH_LIST " == *" x86_64 "* ]]
+
+          MINIMUM_OS=$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP_PATH/Contents/Info.plist")
+          echo "Minimum macOS version: $MINIMUM_OS"
+
           codesign --deep --force --verbose --sign - "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" AltTab-Debug.zip
+
+          {
+            echo "Architectures: $ARCH_LIST"
+            echo "Minimum macOS: $MINIMUM_OS"
+            echo "Signature: ad-hoc (local testing)"
+          } > BUILD-INFO.txt
+
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" AltTab-Universal-Debug.zip
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AltTab-Debug
-          path: AltTab-Debug.zip
+          name: AltTab-Universal-Debug
+          path: |
+            AltTab-Universal-Debug.zip
+            BUILD-INFO.txt
