@@ -27,6 +27,8 @@ jobs:
         run: |
           APP_PATH=$(find DerivedData/Build/Products/Debug -maxdepth 1 -name '*.app' -print -quit)
           test -n "$APP_PATH"
+          codesign --deep --force --verbose --sign - "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" AltTab-Debug.zip
 
       - name: Upload build artifact
