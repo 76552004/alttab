@@ -23,6 +23,7 @@ jobs:
             -derivedDataPath DerivedData \
             ONLY_ACTIVE_ARCH=NO \
             ARCHS="arm64 x86_64" \
+            CURRENT_PROJECT_VERSION=11.4.3 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
