@@ -1,0 +1,36 @@
+name: Build Debug App
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build Debug app
+        run: |
+          xcodebuild \
+            -project alt-tab-macos.xcodeproj \
+            -scheme Debug \
+            -configuration Debug \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Package app
+        run: |
+          APP_PATH=$(find DerivedData/Build/Products/Debug -maxdepth 1 -name '*.app' -print -quit)
+          test -n "$APP_PATH"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" AltTab-Debug.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AltTab-Debug
+          path: AltTab-Debug.zip
